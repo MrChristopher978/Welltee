@@ -1,0 +1,2022 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>WellTee — Software for the people who do the work</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+:root {
+  --navy:        #0A1A2F;
+  --navy-deep:   #050D1A;
+  --navy-mid:    #0F2138;
+  --silver:      #C0C5CE;
+  --silver-dim:  #8A93A4;
+  --paper:       #F2F4F7;
+  --paper-warm:  #ECEEF2;
+  --charcoal:    #3A4150;
+  --mid-grey:    #5A6172;
+
+  --display: "Cormorant Garamond", "Times New Roman", serif;
+  --sans:    "Inter", "Helvetica Neue", Arial, sans-serif;
+  --mono:    "JetBrains Mono", ui-monospace, monospace;
+
+  --hair: rgba(192,197,206,0.22);
+  --hair-strong: rgba(192,197,206,0.45);
+
+  --ease: cubic-bezier(.2, .7, .2, 1);
+  --ease-out: cubic-bezier(.16, 1, .3, 1);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; background: var(--navy); }
+html, body { overscroll-behavior: none; }
+body {
+  font-family: var(--sans);
+  background: var(--navy);
+  color: var(--paper);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  line-height: 1.45;
+  cursor: none;
+}
+@media (max-width: 900px), (pointer: coarse) {
+  body { cursor: auto; }
+}
+
+::selection { background: var(--silver); color: var(--navy); }
+
+a { color: inherit; text-decoration: none; }
+img { display: block; max-width: 100%; }
+
+/* ============================================================
+   GLOBAL CHROME — top bar, side rails, custom cursor, progress
+============================================================ */
+.shell {
+  position: fixed; inset: 0;
+  pointer-events: none;
+  z-index: 100;
+}
+.shell .corners {
+  position: absolute; inset: 18px;
+  border: 1px solid var(--hair);
+  pointer-events: none;
+}
+.shell .tick {
+  position: absolute; width: 8px; height: 8px;
+  border: 1px solid var(--silver-dim);
+}
+.shell .tick.tl { top: -1px; left: -1px; border-right: 0; border-bottom: 0; }
+.shell .tick.tr { top: -1px; right: -1px; border-left: 0; border-bottom: 0; }
+.shell .tick.bl { bottom: -1px; left: -1px; border-right: 0; border-top: 0; }
+.shell .tick.br { bottom: -1px; right: -1px; border-left: 0; border-top: 0; }
+
+.topbar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 22px 32px;
+  z-index: 90;
+  pointer-events: auto;
+  mix-blend-mode: normal;
+  font-family: var(--sans);
+  font-size: 11px; font-weight: 500;
+  letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--silver);
+}
+.topbar .brand {
+  font-family: var(--display); font-weight: 300;
+  font-size: 22px; letter-spacing: 0.05em;
+  color: var(--paper); text-transform: none;
+  display: flex; align-items: baseline; gap: 10px;
+}
+.topbar .brand .punct {
+  width: 6px; height: 6px; background: var(--silver);
+  display: inline-block; align-self: center;
+}
+.topbar .nav {
+  display: flex; gap: 32px;
+  align-items: center;
+}
+.topbar .nav a {
+  position: relative;
+  display: flex; align-items: baseline; gap: 6px;
+  transition: color 0.3s var(--ease);
+}
+.topbar .nav a .num {
+  font-family: var(--mono); font-size: 9px;
+  color: var(--silver-dim);
+}
+.topbar .nav a:hover { color: var(--paper); }
+.topbar .nav a:hover .num { color: var(--silver); }
+
+.topbar .meta-left {
+  display: flex; gap: 28px; align-items: center;
+}
+.topbar .clock {
+  font-family: var(--mono); font-size: 10px;
+  letter-spacing: 0.05em;
+  color: var(--silver);
+}
+.topbar .pulse {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-family: var(--sans); font-size: 9px;
+  letter-spacing: 0.22em;
+}
+.topbar .pulse::before {
+  content: "";
+  width: 6px; height: 6px; background: var(--paper); border-radius: 50%;
+  animation: pulse 1.8s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.35; transform: scale(0.7); }
+}
+
+.progress {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  z-index: 95;
+  pointer-events: none;
+  background: rgba(192,197,206,0.08);
+}
+.progress::after {
+  content: "";
+  display: block;
+  height: 100%;
+  width: var(--p, 0%);
+  background: var(--silver);
+  transition: width 0.1s linear;
+}
+
+/* Side rails */
+.rail {
+  position: fixed;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 88;
+  pointer-events: auto;
+  font-family: var(--mono); font-size: 9px;
+  color: var(--silver-dim);
+}
+.rail.left  { left: 28px; }
+.rail.right { right: 28px; text-align: right; }
+.rail .stack {
+  display: flex; flex-direction: column; gap: 10px;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  letter-spacing: 0.22em; text-transform: uppercase;
+}
+.rail .index {
+  display: flex; flex-direction: column; gap: 14px;
+}
+.rail .index a {
+  display: flex; flex-direction: column; align-items: flex-end; gap: 2px;
+  pointer-events: auto;
+  transition: color 0.3s var(--ease);
+}
+.rail .index a .code { font-family: var(--mono); font-size: 9px; }
+.rail .index a .name {
+  font-family: var(--sans); font-size: 9px; font-weight: 500;
+  letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--silver-dim);
+}
+.rail .index a.active .code { color: var(--paper); }
+.rail .index a.active .name { color: var(--paper); }
+.rail .index a:hover .name { color: var(--silver); }
+
+/* Custom cursor */
+.cursor {
+  position: fixed;
+  pointer-events: none;
+  z-index: 9999;
+  width: 10px; height: 10px;
+  border: 1px solid var(--silver);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: width 0.25s var(--ease), height 0.25s var(--ease),
+              background-color 0.25s var(--ease), border-color 0.25s var(--ease);
+  mix-blend-mode: difference;
+}
+.cursor.big {
+  width: 64px; height: 64px;
+  background: var(--paper);
+  border-color: var(--paper);
+}
+.cursor-label {
+  position: fixed;
+  pointer-events: none;
+  z-index: 9999;
+  font-family: var(--sans); font-size: 9px; font-weight: 500;
+  letter-spacing: 0.22em; text-transform: uppercase;
+  color: var(--navy);
+  transform: translate(-50%, -50%);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.cursor-label.show { opacity: 1; }
+@media (max-width: 900px), (pointer: coarse) {
+  .cursor, .cursor-label { display: none; }
+}
+
+/* ============================================================
+   COMMON
+============================================================ */
+.eyebrow {
+  font-family: var(--sans); font-size: 11px; font-weight: 500;
+  letter-spacing: 0.22em; text-transform: uppercase;
+  color: var(--silver);
+}
+.eyebrow.dark { color: var(--mid-grey); }
+
+.mono { font-family: var(--mono); font-size: 11px; letter-spacing: 0.04em; color: var(--silver-dim); }
+
+.display { font-family: var(--display); font-weight: 300; letter-spacing: -0.012em; line-height: 0.96; }
+
+.section-cap {
+  display: flex; justify-content: space-between; align-items: baseline;
+  border-bottom: 1px solid var(--hair);
+  padding-bottom: 18px;
+}
+
+/* Reveal helper */
+.reveal {
+  opacity: 0;
+  transform: translateY(40px);
+  transition: opacity 1s var(--ease-out), transform 1s var(--ease-out);
+}
+.reveal.in { opacity: 1; transform: translateY(0); }
+.reveal.delay-1 { transition-delay: 0.08s; }
+.reveal.delay-2 { transition-delay: 0.16s; }
+.reveal.delay-3 { transition-delay: 0.24s; }
+.reveal.delay-4 { transition-delay: 0.32s; }
+.reveal.delay-5 { transition-delay: 0.4s; }
+
+/* ============================================================
+   00 — INTRO BOOT
+============================================================ */
+.intro {
+  height: 100vh;
+  display: flex; align-items: center; justify-content: center;
+  position: relative;
+  background: var(--navy-deep);
+  overflow: hidden;
+}
+.intro-grid {
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(to right, var(--hair) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--hair) 1px, transparent 1px);
+  background-size: 80px 80px;
+  opacity: 0.4;
+  mask-image: radial-gradient(ellipse at center, rgba(0,0,0,0.8) 0%, transparent 70%);
+}
+.intro-content {
+  position: relative;
+  text-align: center;
+  z-index: 2;
+  padding: 0 32px;
+}
+.intro-mark {
+  font-family: var(--mono);
+  font-size: 11px; letter-spacing: 0.3em;
+  color: var(--silver);
+  margin-bottom: 32px;
+  display: flex; gap: 18px; justify-content: center; align-items: center;
+}
+.intro-mark .dot {
+  width: 4px; height: 4px; background: var(--silver); border-radius: 50%;
+}
+.intro-title {
+  font-family: var(--display); font-weight: 300;
+  font-size: clamp(80px, 18vw, 280px);
+  line-height: 0.86; letter-spacing: -0.02em;
+  color: var(--paper);
+}
+.intro-title em { font-style: italic; color: var(--silver); }
+.intro-subline {
+  margin-top: 28px;
+  display: flex; justify-content: center; gap: 24px;
+  font-family: var(--sans); font-size: 10px; font-weight: 500;
+  letter-spacing: 0.22em; text-transform: uppercase;
+  color: var(--silver-dim);
+}
+.intro-scrollcue {
+  position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center; gap: 14px;
+  font-family: var(--sans); font-size: 9px; font-weight: 500;
+  letter-spacing: 0.25em; text-transform: uppercase;
+  color: var(--silver);
+}
+.intro-scrollcue .line {
+  width: 1px; height: 40px;
+  background: linear-gradient(to bottom, transparent 0%, var(--silver) 50%, transparent 100%);
+  background-size: 100% 200%;
+  background-position: 0 0;
+  animation: cue 2s ease-in-out infinite;
+}
+@keyframes cue {
+  0%   { background-position: 0 -100%; }
+  100% { background-position: 0 100%; }
+}
+
+/* ============================================================
+   01 — HERO (sticky-stacked)
+============================================================ */
+.hero {
+  position: relative;
+  height: 140vh;
+  background: var(--navy);
+}
+.hero-stick {
+  position: sticky; top: 0;
+  height: 100vh;
+  overflow: hidden;
+  display: flex; flex-direction: column;
+  padding: 110px 56px 56px;
+}
+.hero-cap {
+  display: flex; justify-content: space-between; align-items: baseline;
+  border-bottom: 1px solid var(--hair);
+  padding-bottom: 18px;
+}
+.hero-cap .left { display: flex; gap: 26px; align-items: baseline; }
+.hero-cap .left .num {
+  font-family: var(--mono); font-size: 10px; color: var(--silver);
+}
+.hero-cap .right {
+  font-family: var(--mono); font-size: 10px; color: var(--silver-dim);
+}
+.hero-body {
+  flex: 1;
+  display: flex; flex-direction: column; justify-content: center;
+  position: relative;
+}
+.hero-h1 {
+  font-family: var(--display); font-weight: 300;
+  font-size: clamp(72px, 11vw, 196px);
+  line-height: 0.92; letter-spacing: -0.02em;
+  color: var(--paper);
+  max-width: 14ch;
+}
+.hero-h1 .word {
+  display: inline-block;
+  overflow: hidden;
+}
+.hero-h1 em {
+  font-style: italic;
+  color: var(--silver);
+}
+.hero-foot {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  display: grid; grid-template-columns: 1.4fr 1fr 1fr;
+  gap: 32px;
+  padding-top: 24px;
+  border-top: 1px solid var(--hair);
+  align-items: end;
+}
+.hero-foot .blurb {
+  font-family: var(--sans); font-size: 14px; font-weight: 400;
+  line-height: 1.55; color: var(--silver);
+  max-width: 38ch;
+}
+.hero-foot .blurb em {
+  font-family: var(--display); font-style: italic; font-weight: 400;
+  font-size: 17px; color: var(--paper);
+}
+.hero-foot .meta {
+  display: flex; flex-direction: column; gap: 6px;
+}
+.hero-foot .meta .k {
+  font-family: var(--sans); font-size: 9px; font-weight: 500;
+  letter-spacing: 0.22em; text-transform: uppercase;
+  color: var(--silver-dim);
+}
+.hero-foot .meta .v {
+  font-family: var(--mono); font-size: 12px; color: var(--paper);
+}
+
+.hero-bg-watermark {
+  position: absolute;
+  right: -40px; bottom: -120px;
+  font-family: var(--display); font-style: italic; font-weight: 300;
+  font-size: 700px; line-height: 0.8;
+  color: var(--navy-mid);
+  z-index: 0;
+  pointer-events: none;
+  user-select: none;
+  letter-spacing: -0.05em;
+}
+.hero-h1, .hero-foot, .hero-cap { position: relative; z-index: 2; }
+
+/* ============================================================
+   MARQUEE — credentials
+============================================================ */
+.marquee {
+  background: var(--navy-deep);
+  padding: 24px 0;
+  border-top: 1px solid var(--hair);
+  border-bottom: 1px solid var(--hair);
+  overflow: hidden;
+  position: relative;
+  z-index: 5;
+}
+.marquee-track {
+  display: flex; gap: 60px;
+  white-space: nowrap;
+  animation: marquee 40s linear infinite;
+  font-family: var(--display); font-style: italic; font-weight: 300;
+  font-size: 36px;
+  color: var(--silver);
+}
+.marquee-track .item { display: inline-flex; align-items: center; gap: 60px; }
+.marquee-track .item::after {
+  content: "";
+  width: 6px; height: 6px;
+  background: var(--silver);
+  border-radius: 50%;
+  display: inline-block;
+}
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+/* ============================================================
+   02 — MANIFESTO (sticky line-by-line reveal)
+============================================================ */
+.manifesto {
+  position: relative;
+  height: 280vh;
+  background: var(--navy);
+}
+.manifesto-stick {
+  position: sticky; top: 0;
+  height: 100vh;
+  display: flex; flex-direction: column;
+  padding: 88px 56px 56px;
+  overflow: hidden;
+}
+.manifesto-cap {
+  display: flex; justify-content: space-between; align-items: baseline;
+  border-bottom: 1px solid var(--hair);
+  padding-bottom: 18px;
+  margin-bottom: 60px;
+}
+.manifesto-body {
+  flex: 1;
+  display: flex; align-items: center;
+  position: relative;
+}
+.manifesto-lines {
+  font-family: var(--display); font-weight: 300;
+  font-size: clamp(34px, 5vw, 80px);
+  line-height: 1.06; letter-spacing: -0.014em;
+  color: var(--paper);
+  max-width: 22ch;
+}
+.manifesto-lines .line {
+  display: block;
+  opacity: 0.18;
+  transition: opacity 0.6s var(--ease), color 0.6s var(--ease);
+}
+.manifesto-lines .line.lit { opacity: 1; }
+.manifesto-lines .line em { font-style: italic; color: var(--silver); }
+.manifesto-foot {
+  display: flex; justify-content: space-between; align-items: end;
+  border-top: 1px solid var(--hair);
+  padding-top: 18px;
+}
+.manifesto-foot .progress-text {
+  font-family: var(--mono); font-size: 11px; color: var(--silver);
+}
+
+.manifesto-side {
+  position: absolute; right: 0; top: 0; bottom: 0;
+  width: 280px;
+  display: flex; flex-direction: column; justify-content: center; gap: 20px;
+  border-left: 1px solid var(--hair);
+  padding-left: 30px;
+}
+.manifesto-side .card {
+  border-bottom: 1px solid var(--hair);
+  padding-bottom: 16px;
+}
+.manifesto-side .card .k {
+  font-family: var(--sans); font-size: 9px; font-weight: 500;
+  letter-spacing: 0.22em; text-transform: uppercase;
+  color: var(--silver-dim);
+  margin-bottom: 6px;
+}
+.manifesto-side .card .v {
+  font-family: var(--display); font-weight: 300; font-size: 32px;
+  color: var(--paper); line-height: 1;
+}
+.manifesto-side .card .sub {
+  font-family: var(--sans); font-size: 11px; color: var(--silver-dim);
+  margin-top: 4px;
+}
+
+/* ============================================================
+   02b — REEL (sticky, growing video)
+============================================================ */
+.reel {
+  position: relative;
+  height: 240vh;
+  background: var(--navy-deep);
+  border-top: 1px solid var(--hair);
+  border-bottom: 1px solid var(--hair);
+}
+.reel-stick {
+  position: sticky; top: 0;
+  height: 100vh;
+  overflow: hidden;
+  display: flex; flex-direction: column;
+}
+.reel-cap {
+  display: flex; justify-content: space-between; align-items: baseline;
+  padding: 28px 56px 0;
+  font-family: var(--mono); font-size: 10px; color: var(--silver-dim);
+  letter-spacing: 0.04em;
+}
+.reel-cap .eb {
+  font-family: var(--sans); font-weight: 500;
+  letter-spacing: 0.32em; text-transform: uppercase;
+  font-size: 11px; color: var(--silver);
+}
+.reel-cap .live-dot {
+  display: inline-block; width: 7px; height: 7px; border-radius: 50%;
+  background: var(--silver); margin-right: 8px;
+  animation: reelpulse 1.6s ease-in-out infinite;
+  vertical-align: middle;
+}
+@keyframes reelpulse {
+  0%, 100% { opacity: 0.35; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.25); }
+}
+.reel-body {
+  flex: 1;
+  position: relative;
+  display: flex; align-items: center; justify-content: center;
+  padding: 0 32px 32px;
+  min-height: 0; /* let flex child shrink so frame can honor max-height */
+}
+.reel-watermark {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--display); font-style: italic; font-weight: 300;
+  font-size: clamp(220px, 38vw, 580px);
+  line-height: 0.85;
+  color: rgba(192, 197, 206, 0.05);
+  user-select: none; pointer-events: none;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  transform: translateY(calc(-8% + var(--reel-p, 0) * -4%));
+  z-index: 1;
+}
+/* --------------------------------------------------------------
+   FIX: Constrain the frame by BOTH width AND height.
+   Previously the frame only had `width:` + `aspect-ratio: 16/9`,
+   which let the calculated height push past the viewport on any
+   screen where the math worked out taller than 100vh. Now we cap
+   the frame by an available height budget so it can never extend
+   past its sticky 100vh container, regardless of screen shape.
+-------------------------------------------------------------- */
+.reel-frame {
+  position: relative;
+  /* Width still grows with scroll progress; max-width still applies. */
+  width: calc(56% + var(--reel-p, 0) * 38%);
+  max-width: 1640px;
+  /* Hard ceiling on height: viewport height minus the cap row + padding. */
+  max-height: calc(100vh - 140px);
+  aspect-ratio: 16 / 9;
+  background: #000;
+  z-index: 2;
+  box-shadow:
+    0 0 0 1px rgba(192,197,206,0.18),
+    0 60px 140px -40px rgba(0,0,0,0.85),
+    0 20px 60px -20px rgba(0,0,0,0.6);
+  transition: width 0.12s linear;
+  overflow: hidden;
+}
+.reel-frame video {
+  width: 100%; height: 100%; display: block;
+  object-fit: cover;
+}
+.reel-placeholder {
+  position: absolute; inset: 0;
+  background:
+    repeating-linear-gradient(135deg,
+      rgba(192,197,206,0.04) 0 18px,
+      transparent 18px 36px),
+    radial-gradient(ellipse at center, #0e1f38 0%, #050d1a 80%);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 20px;
+  color: var(--silver);
+  text-align: center;
+}
+.reel-placeholder .glyph {
+  font-family: var(--display); font-style: italic; font-weight: 300;
+  font-size: clamp(60px, 8vw, 130px);
+  line-height: 1; color: var(--paper);
+}
+.reel-placeholder .glyph em { color: var(--silver); font-style: normal; }
+.reel-placeholder .drop {
+  font-family: var(--sans); font-size: 11px; font-weight: 500;
+  letter-spacing: 0.32em; text-transform: uppercase; color: var(--silver);
+}
+.reel-placeholder .path {
+  font-family: var(--mono); font-size: 10px; color: var(--silver-dim);
+  letter-spacing: 0.05em;
+  padding: 6px 14px;
+  border: 1px solid rgba(192,197,206,0.25);
+}
+/* big corner ticks that grow outward as the frame expands */
+.reel-corner {
+  position: absolute;
+  width: calc(22px + var(--reel-p, 0) * 28px);
+  height: calc(22px + var(--reel-p, 0) * 28px);
+  pointer-events: none; z-index: 3;
+  --c: var(--silver);
+}
+.reel-corner.tl { top: -1px; left: -1px; border-top: 2px solid var(--c); border-left: 2px solid var(--c);
+  transform: translate(calc(var(--reel-p, 0) * -14px), calc(var(--reel-p, 0) * -14px));
+}
+.reel-corner.tr { top: -1px; right: -1px; border-top: 2px solid var(--c); border-right: 2px solid var(--c);
+  transform: translate(calc(var(--reel-p, 0) * 14px), calc(var(--reel-p, 0) * -14px));
+}
+.reel-corner.bl { bottom: -1px; left: -1px; border-bottom: 2px solid var(--c); border-left: 2px solid var(--c);
+  transform: translate(calc(var(--reel-p, 0) * -14px), calc(var(--reel-p, 0) * 14px));
+}
+.reel-corner.br { bottom: -1px; right: -1px; border-bottom: 2px solid var(--c); border-right: 2px solid var(--c);
+  transform: translate(calc(var(--reel-p, 0) * 14px), calc(var(--reel-p, 0) * 14px));
+}
+.reel-foot {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 0 56px 28px;
+  font-family: var(--mono); font-size: 10px; color: var(--mid-grey);
+  letter-spacing: 0.04em;
+}
+.reel-foot .ms {
+  display: flex; gap: 32px;
+}
+.reel-foot .ms span { color: var(--silver-dim); }
+.reel-foot .ms b { color: var(--silver); font-weight: 500; }
+.reel-side-l, .reel-side-r {
+  position: absolute; top: 50%; transform: translateY(-50%);
+  writing-mode: vertical-rl;
+  font-family: var(--mono); font-size: 9px; color: var(--silver-dim);
+  letter-spacing: 0.3em; text-transform: uppercase;
+  z-index: 4; pointer-events: none;
+}
+.reel-side-l { left: 22px; transform: translateY(-50%) rotate(180deg); }
+.reel-side-r { right: 22px; }
+.reel-grow-label {
+  position: absolute;
+  bottom: 18px; left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--sans); font-weight: 500; font-size: 9px;
+  letter-spacing: 0.4em; text-transform: uppercase;
+  color: var(--silver);
+  opacity: calc(1 - var(--reel-p, 0) * 2);
+  pointer-events: none;
+  z-index: 5;
+}
+
+@media (max-width: 768px) {
+  .reel { height: 180vh; }
+  .reel-cap { padding: 18px 24px 0; flex-wrap: wrap; gap: 8px; font-size: 9px; }
+  .reel-cap .eb { font-size: 10px; letter-spacing: 0.2em; }
+  .reel-body { padding: 0 16px; }
+  .reel-frame { width: calc(82% + var(--reel-p, 0) * 16%); }
+  .reel-foot { padding: 0 24px 18px; flex-direction: column; align-items: flex-start; gap: 10px; }
+  .reel-foot .ms { gap: 18px; flex-wrap: wrap; }
+  .reel-side-l, .reel-side-r { display: none; }
+  .reel-placeholder .glyph { font-size: clamp(48px, 12vw, 80px); }
+}
+
+.work {
+  position: relative;
+  height: 380vh;
+  background: var(--paper);
+  color: var(--charcoal);
+}
+.work-stick {
+  position: sticky; top: 0;
+  height: 100vh;
+  overflow: hidden;
+  display: flex; flex-direction: column;
+}
+.work-header {
+  display: flex; justify-content: space-between; align-items: baseline;
+  padding: 88px 56px 22px;
+  border-bottom: 1px solid var(--hair-strong);
+}
+.work-header h2 {
+  font-family: var(--display); font-weight: 300;
+  font-size: 64px; line-height: 0.96; letter-spacing: -0.014em;
+  color: var(--navy);
+}
+.work-header h2 em { font-style: italic; }
+.work-header .right {
+  display: flex; flex-direction: column; align-items: flex-end; gap: 4px;
+}
+.work-header .right .eb {
+  font-family: var(--sans); font-size: 10px; font-weight: 500;
+  letter-spacing: 0.22em; text-transform: uppercase;
+  color: var(--mid-grey);
+}
+.work-header .right .ct {
+  font-family: var(--mono); font-size: 11px; color: var(--charcoal);
+}
+
+.work-track-wrap {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+.work-track {
+  display: flex;
+  height: 100%;
+  align-items: stretch;
+  padding: 0 56px;
+  gap: 32px;
+  will-change: transform;
+}
+.work-card {
+  flex: 0 0 60vw;
+  max-width: 760px;
+  display: flex; flex-direction: column;
+  position: relative;
+  padding: 28px 0;
+}
+.work-card .head-row {
+  display: flex; justify-content: space-between; align-items: baseline;
+  border-bottom: 1px solid var(--hair-strong);
+  padding-bottom: 12px;
+}
+.work-card .head-row .code {
+  font-family: var(--mono); font-size: 11px; color: var(--mid-grey);
+  letter-spacing: 0.06em;
+}
+.work-card .head-row .status {
+  font-family: var(--sans); font-size: 9px; font-weight: 500;
+  letter-spacing: 0.22em; text-transform: uppercase;
+  display: flex; align-items: center; gap: 8px;
+  color: var(--charcoal);
+}
+.work-card .head-row .status .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--charcoal);
+}
+.work-card .head-row .status.live .dot { background: #2D6A3F; }
+.work-card .head-row .status.dev  .dot { background: var(--silver); }
+
+.work-card .preview {
+  flex: 1;
+  margin-top: 20px;
+  background: var(--navy);
+  position: relative;
+  overflow: hidden;
+}
+.work-card .preview .preview-inner {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  padding: 32px;
+}
+.work-card .preview .layer-grid {
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(to right, rgba(192,197,206,0.08) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(192,197,206,0.08) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+.work-card .preview .badge {
+  position: absolute; top: 18px; left: 18px;
+  font-family: var(--mono); font-size: 9px; color: var(--silver);
+  letter-spacing: 0.04em;
+}
+.work-card .preview .corner-mono {
+  position: absolute; bottom: 18px; right: 18px;
+  font-family: var(--mono); font-size: 9px; color: var(--silver-dim);
+}
+
+.work-card .meta-row {
+  margin-top: 20px;
+  display: flex; flex-direction: column; align-items: flex-start;
+  border-top: 1px solid var(--hair-strong);
+  padding-top: 14px;
+  gap: 8px;
+}
+.work-card .meta-row h3 {
+  font-family: var(--display); font-weight: 300;
+  font-size: 56px; letter-spacing: -0.012em; color: var(--navy);
+  line-height: 1;
+}
+.work-card .meta-row .descr {
+  font-family: var(--display); font-style: italic; font-weight: 400;
+  font-size: 17px; color: var(--mid-grey);
+  text-align: left; max-width: 42ch;
+  margin-top: 2px;
+}
+
+/* Work card — preview compositions per project */
+.preview.hc {
+  background: linear-gradient(135deg, var(--navy) 0%, var(--navy-mid) 100%);
+}
+.preview.hc .phone {
+  width: 220px; height: 460px;
+  border: 1px solid var(--silver-dim);
+  border-radius: 28px;
+  padding: 12px;
+  background: var(--navy-deep);
+  position: relative;
+  z-index: 2;
+  box-shadow: 0 30px 60px -30px rgba(0,0,0,0.5);
+}
+.preview.hc .phone::before {
+  content: ""; position: absolute; top: 12px; left: 50%;
+  width: 60px; height: 5px; background: var(--silver-dim);
+  border-radius: 3px; transform: translateX(-50%);
+}
+.preview.hc .phone-inner {
+  background: var(--paper); border-radius: 18px; height: 100%;
+  padding: 28px 18px 18px; display: flex; flex-direction: column; gap: 10px;
+}
+.preview.hc .phone-inner .eb {
+  font-family: var(--sans); font-size: 8px; font-weight: 500;
+  letter-spacing: 0.22em; text-transform: uppercase; color: var(--mid-grey);
+}
+.preview.hc .phone-inner .h {
+  font-family: var(--display); font-weight: 300; font-size: 28px;
+  line-height: 1; color: var(--navy);
+}
+.preview.hc .phone-inner .hr {
+  height: 1px; background: var(--hair-strong);
+}
+.preview.hc .phone-inner .row {
+  display: flex; justify-content: space-between;
+  font-family: var(--sans); font-size: 10px; color: var(--charcoal);
+}
+.preview.hc .phone-inner .row .v { font-family: var(--mono); }
+.preview.hc .phone-inner .total {
+  display: flex; justify-content: space-between; align-items: baseline;
+  margin-top: auto; padding-top: 12px; border-top: 1px solid var(--hair-strong);
+}
+.preview.hc .phone-inner .total .l {
+  font-family: var(--sans); font-size: 9px; font-weight: 500;
+  letter-spacing: 0.22em; text-transform: uppercase; color: var(--mid-grey);
+}
+.preview.hc .phone-inner .total .n {
+  font-family: var(--display); font-weight: 300; font-size: 22px; color: var(--navy);
+}
+
+.preview.jq .terminal {
+  position: relative; z-index: 2;
+  width: 75%; max-width: 540px;
+  background: var(--navy-deep);
+  border: 1px solid var(--silver-dim);
+  font-family: var(--mono); font-size: 12px;
+  color: var(--silver);
+  padding: 24px;
+  line-height: 1.7;
+}
+.preview.jq .terminal .prompt { color: var(--paper); }
+.preview.jq .terminal .you    { color: var(--silver); }
+.preview.jq .terminal .ai     { color: var(--paper); }
+.preview.jq .terminal .you::before { content: "› "; color: var(--silver-dim); }
+.preview.jq .terminal .ai::before  { content: "← "; color: var(--silver-dim); }
+.preview.jq .terminal .caret {
+  display: inline-block;
+  width: 8px; height: 14px; background: var(--silver);
+  vertical-align: -2px; animation: blink 1s step-end infinite;
+  margin-left: 4px;
+}
+@keyframes blink { 50% { opacity: 0; } }
+
+.preview.tcs {
+  background: var(--paper-warm);
+}
+.preview.tcs .layer-grid {
+  background-image:
+    linear-gradient(to right, rgba(58,65,80,0.06) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(58,65,80,0.06) 1px, transparent 1px);
+}
+.preview.tcs .badge { color: var(--mid-grey); }
+.preview.tcs .corner-mono { color: var(--mid-grey); }
+.preview.tcs .plate {
+  position: relative; z-index: 2;
+  width: 72%; max-width: 560px;
+  background: var(--navy);
+  border: 1px solid var(--silver);
+  padding: 50px 38px;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  text-align: center;
+  gap: 16px;
+  box-shadow: inset 0 0 0 4px var(--navy), inset 0 0 0 5px var(--silver-dim), 0 30px 60px -30px rgba(0,0,0,0.4);
+}
+.preview.tcs .plate .eb {
+  font-family: var(--sans); font-size: 9px; font-weight: 500;
+  letter-spacing: 0.3em; text-transform: uppercase; color: var(--silver);
+}
+.preview.tcs .plate .name {
+  font-family: var(--display); font-weight: 400; font-style: italic;
+  font-size: 56px; line-height: 1; color: var(--paper);
+}
+.preview.tcs .plate .role {
+  font-family: var(--sans); font-size: 10px; font-weight: 500;
+  letter-spacing: 0.3em; text-transform: uppercase; color: var(--silver);
+}
+.preview.tcs .plate .yr {
+  font-family: var(--mono); font-size: 10px; color: var(--silver-dim);
+  margin-top: 4px;
+}
+
+.work-foot {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 18px 56px;
+  border-top: 1px solid var(--hair-strong);
+  font-family: var(--mono); font-size: 10px; color: var(--mid-grey);
+}
+.work-foot .scrubber {
+  flex: 1;
+  margin: 0 28px;
+  height: 1px;
+  background: var(--hair-strong);
+  position: relative;
+}
+.work-foot .scrubber::after {
+  content: "";
+  position: absolute; left: 0; top: -1px; height: 3px;
+  width: var(--wp, 0%);
+  background: var(--navy);
+  transition: width 0.1s linear;
+}
+
+/* ============================================================
+   04 — FOUNDER
+============================================================ */
+.founder {
+  background: var(--navy);
+  padding: 140px 56px 110px;
+  position: relative;
+  border-top: 1px solid var(--hair);
+}
+.founder-cap {
+  display: flex; justify-content: space-between; align-items: baseline;
+  border-bottom: 1px solid var(--hair);
+  padding-bottom: 18px;
+  margin-bottom: 60px;
+}
+.founder-grid {
+  display: grid; grid-template-columns: 0.9fr 1.4fr;
+  gap: 80px;
+  align-items: start;
+}
+.portrait {
+  position: relative;
+  aspect-ratio: 4 / 5;
+  border: 1px solid var(--hair);
+  background: var(--navy-mid);
+  overflow: hidden;
+}
+.portrait::after {
+  content: ""; position: absolute; inset: 0;
+  background-image:
+    repeating-linear-gradient(135deg,
+      transparent 0 14px,
+      rgba(192,197,206,0.07) 14px 15px);
+}
+.portrait .corners {
+  position: absolute; inset: 12px;
+  border: 1px solid rgba(192,197,206,0.2);
+}
+.portrait .label {
+  position: absolute; top: 24px; left: 24px;
+  font-family: var(--mono); font-size: 9px; color: var(--silver-dim);
+  letter-spacing: 0.04em;
+}
+.portrait .placeholder {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  text-align: center;
+  font-family: var(--mono); font-size: 10px;
+  letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--silver);
+}
+.portrait .placeholder span {
+  background: var(--navy-deep); padding: 12px 20px;
+  border: 1px solid var(--silver-dim);
+}
+.portrait .badge {
+  position: absolute; bottom: 24px; left: 24px;
+  font-family: var(--display); font-weight: 300;
+  font-size: 64px; color: var(--paper);
+  line-height: 0.9;
+}
+.portrait .badge em { font-style: italic; color: var(--silver); }
+
+.founder-text h2 {
+  font-family: var(--display); font-weight: 300;
+  font-size: clamp(48px, 5.6vw, 88px);
+  line-height: 0.98; letter-spacing: -0.014em;
+  color: var(--paper);
+}
+.founder-text h2 em { font-style: italic; color: var(--silver); }
+.founder-text .blurb {
+  margin-top: 36px;
+  font-family: var(--sans); font-size: 16px; line-height: 1.6;
+  color: var(--silver);
+  max-width: 50ch;
+}
+.founder-text .blurb em {
+  font-family: var(--display); font-style: italic; font-weight: 400;
+  font-size: 18px; color: var(--paper);
+}
+.founder-text .creds {
+  margin-top: 48px;
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 12px 36px;
+  border-top: 1px solid var(--hair);
+  padding-top: 24px;
+}
+.founder-text .creds .row {
+  display: flex; justify-content: space-between;
+  border-bottom: 1px solid var(--hair);
+  padding: 10px 0;
+}
+.founder-text .creds .row .k {
+  font-family: var(--sans); font-size: 10px; font-weight: 500;
+  letter-spacing: 0.22em; text-transform: uppercase;
+  color: var(--silver-dim);
+}
+.founder-text .creds .row .v {
+  font-family: var(--mono); font-size: 11px; color: var(--paper);
+}
+
+/* ============================================================
+   05 — APPROACH (stacking cards)
+============================================================ */
+.approach {
+  position: relative;
+  background: var(--navy-deep);
+  padding: 0 0 80px;
+}
+.approach-header {
+  padding: 100px 56px 36px;
+  display: flex; justify-content: space-between; align-items: baseline;
+  border-bottom: 1px solid var(--hair);
+}
+.approach-header h2 {
+  font-family: var(--display); font-weight: 300;
+  font-size: clamp(48px, 6vw, 88px);
+  line-height: 0.98; letter-spacing: -0.014em;
+  color: var(--paper);
+}
+.approach-header h2 em { font-style: italic; color: var(--silver); }
+.approach-stack {
+  position: relative;
+  padding: 60px 56px;
+}
+.stack-card {
+  position: sticky;
+  border: 1px solid var(--hair);
+  background: var(--navy);
+  padding: 56px;
+  display: grid; grid-template-columns: 0.6fr 1.4fr;
+  gap: 60px;
+  margin-top: 40px;
+  min-height: 60vh;
+}
+.stack-card:nth-child(1) { top: 120px; background: #0E2138; }
+.stack-card:nth-child(2) { top: 160px; background: #0B1B30; }
+.stack-card:nth-child(3) { top: 200px; background: var(--navy-deep); }
+.stack-card .index {
+  display: flex; flex-direction: column; gap: 12px;
+}
+.stack-card .index .num {
+  font-family: var(--display); font-style: italic; font-weight: 300;
+  font-size: 96px; color: var(--silver); line-height: 1;
+}
+.stack-card .index .label {
+  font-family: var(--sans); font-size: 11px; font-weight: 500;
+  letter-spacing: 0.22em; text-transform: uppercase;
+  color: var(--silver-dim);
+}
+.stack-card .body h3 {
+  font-family: var(--display); font-weight: 300;
+  font-size: clamp(56px, 6vw, 96px);
+  line-height: 0.96; letter-spacing: -0.014em;
+  color: var(--paper); margin-bottom: 24px;
+}
+.stack-card .body h3 em { font-style: italic; color: var(--silver); }
+.stack-card .body p {
+  font-family: var(--sans); font-size: 16px; line-height: 1.6;
+  color: var(--silver); max-width: 50ch;
+}
+.stack-card .body p em {
+  font-family: var(--display); font-style: italic; font-weight: 400;
+  font-size: 18px; color: var(--paper);
+}
+.stack-card .footer {
+  margin-top: 36px;
+  padding-top: 18px;
+  border-top: 1px solid var(--hair);
+  display: flex; justify-content: space-between;
+  font-family: var(--mono); font-size: 10px; color: var(--silver-dim);
+}
+
+/* ============================================================
+   06 — CONTACT / PRESS KIT
+============================================================ */
+.contact {
+  background: var(--paper);
+  color: var(--charcoal);
+  padding: 140px 56px 100px;
+  border-top: 1px solid var(--hair);
+}
+.contact-cap {
+  display: flex; justify-content: space-between; align-items: baseline;
+  border-bottom: 1px solid var(--hair-strong);
+  padding-bottom: 18px;
+}
+.contact-cap .eyebrow { color: var(--mid-grey); }
+.contact-cap .mono { color: var(--mid-grey); }
+.contact h2 {
+  margin-top: 80px;
+  font-family: var(--display); font-weight: 300;
+  font-size: clamp(64px, 9vw, 144px);
+  line-height: 0.94; letter-spacing: -0.018em;
+  color: var(--navy);
+  max-width: 14ch;
+}
+.contact h2 em { font-style: italic; }
+.contact .splitter {
+  margin-top: 80px;
+  display: grid; grid-template-columns: 1.2fr 1fr 1fr;
+  gap: 60px;
+  border-top: 1px solid var(--hair-strong);
+  padding-top: 36px;
+}
+.contact .splitter > div {
+  display: flex; flex-direction: column; gap: 14px;
+}
+.contact .splitter h4 {
+  font-family: var(--sans); font-size: 10px; font-weight: 500;
+  letter-spacing: 0.22em; text-transform: uppercase;
+  color: var(--mid-grey);
+  margin-bottom: 4px;
+}
+.contact .splitter .v-big {
+  font-family: var(--display); font-weight: 300; font-size: 48px;
+  line-height: 1; color: var(--navy); letter-spacing: -0.01em;
+}
+.contact .splitter .v-big.italic { font-style: italic; }
+.contact .splitter .row {
+  display: grid; grid-template-columns: 18px 1fr;
+  font-family: var(--sans); font-size: 14px; color: var(--charcoal);
+  gap: 12px; line-height: 1.5;
+}
+.contact .splitter .row .k {
+  font-family: var(--mono); font-size: 11px; color: var(--mid-grey);
+}
+
+.contact .cta {
+  margin-top: 60px;
+  display: flex; justify-content: space-between; align-items: center;
+  border-top: 1px solid var(--hair-strong);
+  padding-top: 28px;
+}
+.contact .cta .question {
+  font-family: var(--display); font-style: italic; font-weight: 400;
+  font-size: 22px; color: var(--charcoal);
+}
+.contact .cta .button {
+  display: inline-flex; align-items: center; gap: 14px;
+  border: 1px solid var(--navy);
+  background: transparent;
+  padding: 16px 28px;
+  font-family: var(--sans); font-size: 11px; font-weight: 500;
+  letter-spacing: 0.22em; text-transform: uppercase;
+  color: var(--navy);
+  cursor: none;
+  transition: background 0.4s var(--ease), color 0.4s var(--ease);
+}
+.contact .cta .button:hover { background: var(--navy); color: var(--paper); }
+.contact .cta .button .arrow { font-family: var(--mono); }
+
+/* ============================================================
+   07 — FOOTER
+============================================================ */
+.footer {
+  background: var(--navy-deep);
+  color: var(--paper);
+  padding: 100px 56px 40px;
+  border-top: 1px solid var(--hair);
+}
+.footer-mark {
+  font-family: var(--display); font-weight: 300;
+  font-size: clamp(140px, 22vw, 360px);
+  line-height: 0.85; letter-spacing: -0.02em;
+  color: var(--paper);
+  display: flex; align-items: baseline; gap: 24px;
+  border-bottom: 1px solid var(--hair);
+  padding-bottom: 24px;
+}
+.footer-mark em { font-style: italic; color: var(--silver); }
+.footer-mark .punct {
+  width: 18px; height: 18px;
+  background: var(--silver);
+  align-self: center;
+}
+
+.footer-grid {
+  margin-top: 56px;
+  display: grid; grid-template-columns: 1.4fr 1fr 1fr 1fr;
+  gap: 60px;
+}
+.footer-grid h5 {
+  font-family: var(--sans); font-size: 10px; font-weight: 500;
+  letter-spacing: 0.22em; text-transform: uppercase;
+  color: var(--silver-dim);
+  margin-bottom: 18px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--hair);
+}
+.footer-grid ul { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+.footer-grid li { font-family: var(--sans); font-size: 13px; }
+.footer-grid li.with-code {
+  display: flex; justify-content: space-between;
+}
+.footer-grid li .code {
+  font-family: var(--mono); font-size: 10px; color: var(--silver-dim);
+}
+.footer-grid li a:hover { color: var(--silver); }
+
+.footer-bottom {
+  margin-top: 80px;
+  padding-top: 22px;
+  border-top: 1px solid var(--hair);
+  display: flex; justify-content: space-between; align-items: baseline;
+  font-family: var(--mono); font-size: 10px; color: var(--silver-dim);
+}
+.footer-bottom .lock {
+  display: flex; gap: 12px; align-items: center;
+}
+
+/* ============================================================
+   RESPONSIVE
+============================================================ */
+@media (max-width: 1100px) {
+  .topbar .nav { display: none; }
+  .rail.left, .rail.right { display: none; }
+  .hero-stick { padding: 90px 28px 28px; }
+  .manifesto-stick { padding: 80px 28px 28px; }
+  .manifesto-side { display: none; }
+  .work-header { padding: 80px 28px 22px; }
+  .work-foot, .work-track { padding-left: 28px; padding-right: 28px; }
+  .work-card { flex: 0 0 88vw; }
+  .founder, .approach-header, .approach-stack, .contact, .footer { padding-left: 28px; padding-right: 28px; }
+  .founder-grid { grid-template-columns: 1fr; gap: 40px; }
+  .stack-card { padding: 32px; grid-template-columns: 1fr; gap: 24px; }
+  .contact .splitter { grid-template-columns: 1fr; gap: 36px; }
+  .footer-grid { grid-template-columns: 1fr 1fr; gap: 36px; }
+}
+@media (max-width: 600px) {
+  .hero-foot { grid-template-columns: 1fr; gap: 18px; }
+  .footer-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- ============== GLOBAL CHROME ============== -->
+<div class="shell">
+  <div class="corners">
+    <div class="tick tl"></div>
+    <div class="tick tr"></div>
+    <div class="tick bl"></div>
+    <div class="tick br"></div>
+  </div>
+</div>
+
+<div class="progress" id="progress"></div>
+
+<header class="topbar">
+  <a href="#hero" class="brand">welltee<span class="punct"></span></a>
+  <div class="meta-left">
+    <span class="clock" id="clock">CST · — · —</span>
+    <span class="pulse">EST 2024</span>
+  </div>
+  <nav class="nav">
+    <a href="#work"><span class="num">01</span> Work</a>
+    <a href="#manifesto"><span class="num">02</span> About</a>
+    <a href="#approach"><span class="num">03</span> Approach</a>
+    <a href="#contact"><span class="num">04</span> Contact</a>
+  </nav>
+</header>
+
+<aside class="rail left">
+  <div class="stack">WT-2024 · WELLTEE LLC · SOFTWARE WITH RESPECT</div>
+</aside>
+
+<aside class="rail right">
+  <div class="index" id="indexNav">
+    <a href="#hero"      data-target="hero"><span class="code">§ 01</span><span class="name">Hero</span></a>
+    <a href="#manifesto" data-target="manifesto"><span class="code">§ 02</span><span class="name">Manifesto</span></a>
+    <a href="#work"      data-target="work"><span class="code">§ 03</span><span class="name">Work</span></a>
+    <a href="#founder"   data-target="founder"><span class="code">§ 04</span><span class="name">Founder</span></a>
+    <a href="#approach"  data-target="approach"><span class="code">§ 05</span><span class="name">Approach</span></a>
+    <a href="#contact"   data-target="contact"><span class="code">§ 06</span><span class="name">Contact</span></a>
+  </div>
+</aside>
+
+<div class="cursor" id="cursor"></div>
+<div class="cursor-label" id="cursorLabel"></div>
+
+<!-- ============== 00 INTRO ============== -->
+<section class="intro" id="intro">
+  <div class="intro-grid"></div>
+  <div class="intro-content">
+    <div class="intro-mark">
+      <span>WT-2024</span>
+      <span class="dot"></span>
+      <span>FILE BI-01</span>
+      <span class="dot"></span>
+      <span>FIRST EDITION</span>
+    </div>
+    <div class="intro-title reveal in">welltee<em>.</em></div>
+    <div class="intro-subline">
+      <span>Software for real life</span>
+      <span>Mobile · SaaS</span>
+      <span>Built for working hands</span>
+    </div>
+  </div>
+  <div class="intro-scrollcue">
+    <span>Scroll</span>
+    <span class="line"></span>
+  </div>
+</section>
+
+<!-- ============== 01 HERO ============== -->
+<section class="hero" id="hero">
+  <div class="hero-stick">
+    <div class="hero-cap">
+      <div class="left">
+        <span class="num">§ 01 / 06</span>
+        <span class="eyebrow">Hero · Opening Statement</span>
+      </div>
+      <div class="right" id="heroTime">— —:— —</div>
+    </div>
+
+    <div class="hero-body">
+      <div class="hero-bg-watermark">w</div>
+      <h1 class="hero-h1">
+        Software<br/>
+        <em>for real</em><br/>
+        life.
+      </h1>
+    </div>
+  </div>
+</section>
+
+<!-- ============== MARQUEE ============== -->
+<div class="marquee">
+  <div class="marquee-track" id="marquee">
+    <span class="item">Software for real life</span>
+    <span class="item">Mobile &amp; SaaS products</span>
+    <span class="item"><em>Software with respect</em></span>
+    <span class="item">Built without bloat</span>
+    <span class="item">No ads — ever</span>
+    <span class="item">Made for working hands</span>
+    <span class="item"><em>est.</em> 2024</span>
+    <span class="item">For the people who do the work</span>
+    <span class="item">Software for real life</span>
+    <span class="item">Mobile &amp; SaaS products</span>
+    <span class="item"><em>Software with respect</em></span>
+    <span class="item">Built without bloat</span>
+    <span class="item">No ads — ever</span>
+    <span class="item">Made for working hands</span>
+    <span class="item"><em>est.</em> 2024</span>
+    <span class="item">For the people who do the work</span>
+  </div>
+</div>
+
+<!-- ============== 02 MANIFESTO ============== -->
+<section class="manifesto" id="manifesto">
+  <div class="manifesto-stick">
+    <div class="manifesto-cap">
+      <span class="eyebrow">§ 02 — Manifesto</span>
+      <span class="mono" id="manifestoCount">000 / 100</span>
+    </div>
+
+    <div class="manifesto-body">
+      <div class="manifesto-lines" id="manifestoLines">
+        <span class="line">We build products</span>
+        <span class="line">that are <em>intuitive.</em></span>
+        <span class="line"><em>Thoughtful.</em></span>
+        <span class="line">Accurate to the needs</span>
+        <span class="line">of the <em>people who use them.</em></span>
+      </div>
+
+      <div class="manifesto-side">
+        <div class="card">
+          <div class="k">Standard</div>
+          <div class="v">Three.</div>
+          <div class="sub">Intuitive. Thoughtful. Accurate to the work. Every product, every release.</div>
+        </div>
+        <div class="card">
+          <div class="k">Origin</div>
+          <div class="v">From the floor.</div>
+          <div class="sub">Twenty years in management on production lines. Saw the gap in tools built for working people. Closed it.</div>
+        </div>
+        <div class="card">
+          <div class="k">Active Products</div>
+          <div class="v">2.</div>
+          <div class="sub">HC-1125 · JQ-0526 · more in the workshop.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="manifesto-foot">
+      <span class="progress-text">PROGRESS · <span id="manifestoPct">0</span>%</span>
+      <span class="progress-text">VC-03 · APPROACH STATEMENT</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============== 02b REEL ============== -->
+<section class="reel" id="reel">
+  <div class="reel-stick">
+
+    <div class="reel-side-l">WT · FILM · 01 — software with respect · 2024</div>
+    <div class="reel-side-r">duration TBD · 16 : 9 · atmos · not yet color-graded</div>
+
+    <div class="reel-cap">
+      <div>
+        <span class="live-dot"></span><span class="eb">Now showing</span>
+      </div>
+      <div>WT-FILM-01 · <span id="reel-clock">--:--:-- CT</span></div>
+      <div class="eb">§ 02b — The Reel</div>
+    </div>
+
+    <div class="reel-body">
+      <div class="reel-watermark">watch.</div>
+
+      <div class="reel-frame">
+        <span class="reel-corner tl"></span>
+        <span class="reel-corner tr"></span>
+        <span class="reel-corner bl"></span>
+        <span class="reel-corner br"></span>
+
+        <!--
+          ↓ When the reel is ready, set src="" on the video below
+          (e.g. src="assets/welltee-reel.mp4") and delete the
+          .reel-placeholder block. Suggested filename: welltee-reel.mp4
+        -->
+        <video controls preload="metadata" muted playsinline></video>
+
+        <div class="reel-placeholder">
+          <div class="glyph">welltee<em>.</em></div>
+          <div class="drop">— reel · wt-film-01 —</div>
+          <div class="path">assets/welltee-reel.mp4</div>
+        </div>
+
+        <div class="reel-grow-label">scroll to expand</div>
+      </div>
+    </div>
+
+    <div class="reel-foot">
+      <div class="ms">
+        <span><b>FILE</b> &nbsp; WT-FILM-01</span>
+        <span><b>RATIO</b> &nbsp; 16 : 9</span>
+        <span><b>STATUS</b> &nbsp; coming soon</span>
+      </div>
+      <div class="ms">
+        <span>SCROLL <span id="reel-progress">000</span>%</span>
+        <span>FRAME EXPAND ——▶</span>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ============== 03 WORK ============== -->
+<section class="work" id="work">
+  <div class="work-stick">
+    <div class="work-header">
+      <h2>Work, <em>not output.</em></h2>
+      <div class="right">
+        <span class="eb">§ 03 — Selected Projects</span>
+        <span class="ct" id="workCount">001 / 003</span>
+      </div>
+    </div>
+
+    <div class="work-track-wrap">
+      <div class="work-track" id="workTrack">
+
+        <!-- Card 01 — HustleCraft -->
+        <article class="work-card">
+          <div class="head-row">
+            <span class="code">HC-1125 · 2024</span>
+            <span class="status live"><span class="dot"></span>Live · iOS &amp; Android</span>
+          </div>
+          <div class="preview hc">
+            <div class="layer-grid"></div>
+            <span class="badge">HC-1125</span>
+            <span class="corner-mono">PREVIEW · 01</span>
+            <div class="preview-inner">
+              <div class="phone">
+                <div class="phone-inner">
+                  <div class="eb">HC-1125 · INV-0042</div>
+                  <div class="h">Invoice<br/>0042.</div>
+                  <div class="hr"></div>
+                  <div class="row"><span>Labor · 6 hr</span><span class="v">$420.00</span></div>
+                  <div class="row"><span>Materials</span><span class="v">$186.40</span></div>
+                  <div class="row"><span>Travel · 22 mi</span><span class="v">$14.74</span></div>
+                  <div class="row" style="color: var(--mid-grey);"><span>Tax · 6.25%</span><span class="v">$38.81</span></div>
+                  <div class="total">
+                    <span class="l">Total</span>
+                    <span class="n">$659.95</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="meta-row">
+            <h3>HustleCraft.</h3>
+            <p class="descr">"Invoicing for contractors who'd rather be on the job site."</p>
+          </div>
+        </article>
+
+        <!-- Card 02 — JobQuest -->
+        <article class="work-card">
+          <div class="head-row">
+            <span class="code">JQ-0526 · 2025</span>
+            <span class="status dev"><span class="dot"></span>In Development</span>
+          </div>
+          <div class="preview jq">
+            <div class="layer-grid"></div>
+            <span class="badge">JQ-0526</span>
+            <span class="corner-mono">PREVIEW · 02</span>
+            <div class="preview-inner">
+              <div class="terminal">
+                <div class="prompt">jq · session 0526.014</div>
+                <div style="margin-top: 14px;"></div>
+                <div class="ai">Tell me about a time you solved a problem on the floor.</div>
+                <div class="you">Hydraulic press kept faulting at shift-change.<br/>Logged the times. Found the temp-drift. Fixed the seal.</div>
+                <div class="ai">Good. Let's turn that into a STAR bullet.<br/>Diagnosed recurring hydraulic-press failure → reduced<br/>downtime 38% in two weeks.<span class="caret"></span></div>
+              </div>
+            </div>
+          </div>
+          <div class="meta-row">
+            <h3>JobQuest.</h3>
+            <p class="descr">"A résumé coach that actually understands the trades."</p>
+          </div>
+        </article>
+
+      </div>
+    </div>
+
+    <div class="work-foot">
+      <span>HORIZONTAL · DRAG OR SCROLL</span>
+      <div class="scrubber" id="workScrub"></div>
+      <span id="workIndex">01 / 03</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============== 04 FOUNDER ============== -->
+<section class="founder" id="founder">
+  <div class="founder-cap">
+    <span class="eyebrow">§ 04 — Founder</span>
+    <span class="mono">FILE BI-01 · 04 / 06</span>
+  </div>
+
+  <div class="founder-grid">
+    <div class="portrait">
+      <div class="corners"></div>
+      <span class="label">PORTRAIT · 4×5</span>
+      <div class="placeholder"><span>· photograph ·</span></div>
+      <div class="badge">CB<em>.</em></div>
+    </div>
+
+    <div class="founder-text">
+      <h2>
+        Twenty years<br/>
+        on the floor.<br/>
+        <em>Now in code.</em>
+      </h2>
+      <p class="blurb">
+        <em>Christopher</em> spent twenty-plus years in management on
+        production floors and aircraft hangars before transitioning to
+        software. He builds the way craftspeople build everything else —
+        with attention, restraint, and respect for the people on the
+        other end of it.
+      </p>
+      <div class="creds">
+        <div class="row"><span class="k">Studio</span><span class="v">WellTee LLC</span></div>
+        <div class="row"><span class="k">Founded</span><span class="v">2024</span></div>
+        <div class="row"><span class="k">Active Products</span><span class="v">2</span></div>
+        <div class="row"><span class="k">Philosophy</span><span class="v">Software with respect</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============== 05 APPROACH ============== -->
+<section class="approach" id="approach">
+  <div class="approach-header">
+    <h2>Three rules.<br/><em>That's it.</em></h2>
+    <span class="mono">§ 05 — METHOD</span>
+  </div>
+
+  <div class="approach-stack">
+
+    <article class="stack-card">
+      <div class="index">
+        <span class="num">01<em style="font-style: italic;">.</em></span>
+        <span class="label">Rule One</span>
+      </div>
+      <div class="body">
+        <h3>No <em>bloat.</em></h3>
+        <p>
+          One product, one job. Every feature earns its place.
+          The thing you came to do is one tap away.
+          We'd rather ship a tool that does one thing right than
+          a platform that does ten things badly.
+        </p>
+        <div class="footer">
+          <span>RULE-01 · DISCIPLINE</span>
+          <span>↓ KEEP READING</span>
+        </div>
+      </div>
+    </article>
+
+    <article class="stack-card">
+      <div class="index">
+        <span class="num">02<em style="font-style: italic;">.</em></span>
+        <span class="label">Rule Two</span>
+      </div>
+      <div class="body">
+        <h3>No <em>ads.</em></h3>
+        <p>
+          You are the customer, not the inventory.
+          We don't sell your attention to anyone, ever.
+          Software isn't a billboard, it's a tool — and a tool you
+          rent every month is a tool that owns <em>you</em>.
+        </p>
+        <div class="footer">
+          <span>RULE-02 · RESPECT</span>
+          <span>↓ KEEP READING</span>
+        </div>
+      </div>
+    </article>
+
+    <article class="stack-card">
+      <div class="index">
+        <span class="num">03<em style="font-style: italic;">.</em></span>
+        <span class="label">Rule Three</span>
+      </div>
+      <div class="body">
+        <h3>No subscriptions <em>you can't escape.</em></h3>
+        <p>
+          Cancel from inside the app, in two taps. Export your data, take
+          it with you, walk away when you want. <em>Just software that
+          respects your time and the work you do.</em>
+        </p>
+        <div class="footer">
+          <span>RULE-03 · TRUST</span>
+          <span>↓ TO CONTACT</span>
+        </div>
+      </div>
+    </article>
+
+  </div>
+</section>
+
+<!-- ============== 06 CONTACT ============== -->
+<section class="contact" id="contact">
+  <div class="contact-cap">
+    <span class="eyebrow">§ 06 — Contact</span>
+    <span class="mono">welltee.net / contact</span>
+  </div>
+
+  <h2>Get in touch.<br/><em>And let's get to work.</em></h2>
+
+  <div class="splitter">
+    <div>
+      <h4>The Studio</h4>
+      <span class="v-big italic">WellTee LLC</span>
+      <p style="font-family: var(--sans); font-size: 14px; line-height: 1.6; color: var(--charcoal); max-width: 36ch; margin-top: 8px;">
+        For new work, partnerships, press, or to say hello —
+        the door's open. We typically respond within two business days.
+      </p>
+    </div>
+    <div>
+      <h4>Press Kit</h4>
+      <div class="row"><span class="k">E</span><span><a href="mailto:chris@welltee.net">chris@welltee.net</a></span></div>
+      <div class="row"><span class="k">W</span><span>welltee.net</span></div>
+      <div class="row"><span class="k">EST</span><span>2024</span></div>
+    </div>
+    <div>
+      <h4>Active Work</h4>
+      <div class="row"><span class="k">HC</span><span>HustleCraft · 1125</span></div>
+      <div class="row"><span class="k">JQ</span><span>JobQuest · 0526</span></div>
+
+    </div>
+  </div>
+
+  <div class="cta">
+    <span class="question">"Got a project in mind? Tell me about it."</span>
+    <a href="mailto:chris@welltee.net" class="button" data-cursor="email">
+      <span>Start a conversation</span>
+      <span class="arrow">→</span>
+    </a>
+  </div>
+</section>
+
+<!-- ============== 07 FOOTER ============== -->
+<footer class="footer">
+  <div class="footer-mark">welltee<em>.</em><span class="punct"></span></div>
+
+  <div class="footer-grid">
+    <div>
+      <h5>The Studio</h5>
+      <ul>
+        <li>WellTee LLC, est. 2024</li>
+        <li>Software for real life</li>
+        <li>Built for working hands</li>
+        <li style="color: var(--silver); margin-top: 12px; font-family: var(--display); font-style: italic; font-size: 22px; line-height: 1.2;">"Software with respect."</li>
+      </ul>
+    </div>
+    <div>
+      <h5>Work</h5>
+      <ul>
+        <li class="with-code"><a href="#">HustleCraft</a><span class="code">HC-1125</span></li>
+        <li class="with-code"><a href="#">JobQuest</a><span class="code">JQ-0526</span></li>
+
+      </ul>
+    </div>
+    <div>
+      <h5>Studio</h5>
+      <ul>
+        <li><a href="#manifesto">Manifesto</a></li>
+        <li><a href="#founder">Founder</a></li>
+        <li><a href="#approach">Approach</a></li>
+        <li><a href="#contact">Contact</a></li>
+      </ul>
+    </div>
+    <div>
+      <h5>Contact</h5>
+      <ul>
+        <li><a href="mailto:chris@welltee.net">chris@welltee.net</a></li>
+        <li><a href="https://welltee.net">welltee.net</a></li>
+      </ul>
+    </div>
+    </div>
+  </div>
+
+  <div class="footer-bottom">
+    <span>© WellTee LLC · MMXXVI · ALL WORK MADE BY HAND</span>
+    <span class="lock">
+      <span style="display:inline-block; width:6px; height:6px; background: var(--silver); border-radius:50%;"></span>
+      WT-2024 · BI-01 · END OF FILE
+    </span>
+  </div>
+</footer>
+
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+/* ==============================================================
+   1. CUSTOM CURSOR
+============================================================== */
+(() => {
+  const cursor = document.getElementById('cursor');
+  const label  = document.getElementById('cursorLabel');
+  if (!cursor) return;
+  let tx = window.innerWidth / 2, ty = window.innerHeight / 2;
+  let cx = tx, cy = ty;
+  let lx = tx, ly = ty;
+
+  window.addEventListener('mousemove', (e) => {
+    tx = e.clientX; ty = e.clientY;
+  });
+
+  function tick() {
+    cx += (tx - cx) * 0.18;
+    cy += (ty - cy) * 0.18;
+    lx += (tx - lx) * 0.22;
+    ly += (ty - ly) * 0.22;
+    cursor.style.transform = `translate(${cx}px, ${cy}px) translate(-50%, -50%)`;
+    label.style.transform  = `translate(${lx}px, ${ly}px) translate(-50%, -50%)`;
+    requestAnimationFrame(tick);
+  }
+  tick();
+
+  // Hover targets
+  document.querySelectorAll('a, button, [data-cursor]').forEach((el) => {
+    el.addEventListener('mouseenter', () => {
+      cursor.classList.add('big');
+      const t = el.getAttribute('data-cursor');
+      if (t) { label.textContent = t; label.classList.add('show'); }
+    });
+    el.addEventListener('mouseleave', () => {
+      cursor.classList.remove('big');
+      label.classList.remove('show');
+    });
+  });
+})();
+
+/* ==============================================================
+   2. CLOCK — Mount Carmel time (America/Chicago)
+============================================================== */
+(() => {
+  const clock = document.getElementById('clock');
+  const heroTime = document.getElementById('heroTime');
+
+  function pad(n) { return n.toString().padStart(2, '0'); }
+  function update() {
+    const now = new Date();
+    const fmt = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/Chicago',
+      hour: '2-digit', minute: '2-digit', second: '2-digit',
+      hour12: false
+    });
+    const parts = fmt.formatToParts(now);
+    const get = (t) => parts.find(p => p.type === t)?.value ?? '';
+    const h = get('hour'), m = get('minute'), s = get('second');
+    const tz = new Intl.DateTimeFormat('en-US', { timeZone: 'America/Chicago', timeZoneName: 'short' })
+      .formatToParts(now).find(p => p.type === 'timeZoneName')?.value ?? 'CST';
+    const date = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/Chicago',
+      year: 'numeric', month: '2-digit', day: '2-digit'
+    }).format(now);
+    if (clock)   clock.textContent  = `${tz} · ${h}:${m}:${s}`;
+    if (heroTime) heroTime.textContent = `${date.replaceAll('/', '.')}  ${h}:${m}:${s}`;
+  }
+  update(); setInterval(update, 1000);
+})();
+
+/* ==============================================================
+   3. SCROLL PROGRESS BAR + INDEX HIGHLIGHT
+============================================================== */
+(() => {
+  const bar = document.getElementById('progress');
+  const indexLinks = Array.from(document.querySelectorAll('#indexNav a'));
+
+  const sectionMap = indexLinks.map(a => ({
+    link: a,
+    id: a.dataset.target,
+    el: document.getElementById(a.dataset.target)
+  })).filter(s => s.el);
+
+  function tick() {
+    const h = document.documentElement;
+    const max = h.scrollHeight - h.clientHeight;
+    const p = max > 0 ? (h.scrollTop / max) : 0;
+    if (bar) bar.style.setProperty('--p', (p * 100).toFixed(2) + '%');
+
+    // Active section
+    const mid = window.scrollY + window.innerHeight * 0.5;
+    let activeId = null;
+    for (const s of sectionMap) {
+      const r = s.el.getBoundingClientRect();
+      const top = r.top + window.scrollY;
+      const bottom = top + r.height;
+      if (mid >= top && mid < bottom) { activeId = s.id; break; }
+    }
+    sectionMap.forEach(s => {
+      s.link.classList.toggle('active', s.id === activeId);
+    });
+
+    requestAnimationFrame(tick);
+  }
+  tick();
+})();
+
+/* ==============================================================
+   4. MANIFESTO — line-by-line reveal driven by scroll progress
+============================================================== */
+(() => {
+  const section = document.getElementById('manifesto');
+  const lines   = document.querySelectorAll('#manifestoLines .line');
+  const pct     = document.getElementById('manifestoPct');
+  const count   = document.getElementById('manifestoCount');
+  if (!section || !lines.length) return;
+
+  function tick() {
+    const r = section.getBoundingClientRect();
+    const total = section.offsetHeight - window.innerHeight;
+    const scrolled = Math.max(0, -r.top);
+    const p = Math.min(1, Math.max(0, scrolled / total));
+
+    const visible = Math.floor(p * (lines.length + 1));
+    lines.forEach((line, i) => {
+      line.classList.toggle('lit', i < visible);
+    });
+    if (pct)   pct.textContent = Math.round(p * 100);
+    if (count) count.textContent = String(Math.round(p * 100)).padStart(3, '0') + ' / 100';
+
+    requestAnimationFrame(tick);
+  }
+  tick();
+})();
+
+/* ==============================================================
+   5. WORK SECTION — vertical scroll → horizontal track
+============================================================== */
+(() => {
+  const section = document.getElementById('work');
+  const track   = document.getElementById('workTrack');
+  const scrub   = document.getElementById('workScrub');
+  const idxEl   = document.getElementById('workIndex');
+  const cntEl   = document.getElementById('workCount');
+  if (!section || !track) return;
+
+  const cards = track.querySelectorAll('.work-card');
+
+  function tick() {
+    const r = section.getBoundingClientRect();
+    const total = section.offsetHeight - window.innerHeight;
+    const scrolled = Math.max(0, -r.top);
+    const p = Math.min(1, Math.max(0, scrolled / total));
+
+    // distance to translate: trackWidth - viewportWidth
+    const trackWidth = track.scrollWidth;
+    const viewWidth  = window.innerWidth;
+    const distance = Math.max(0, trackWidth - viewWidth);
+    track.style.transform = `translateX(${-(p * distance)}px)`;
+
+    if (scrub) scrub.style.setProperty('--wp', (p * 100).toFixed(2) + '%');
+
+    // Index based on which card is centered in viewport
+    const center = viewWidth / 2;
+    let active = 0;
+    cards.forEach((c, i) => {
+      const rect = c.getBoundingClientRect();
+      if (rect.left < center && rect.right > center) active = i;
+    });
+    const total_n = cards.length;
+    if (idxEl) idxEl.textContent = String(active + 1).padStart(2, '0') + ' / ' + String(total_n).padStart(2, '0');
+    if (cntEl) cntEl.textContent = String(active + 1).padStart(3, '0') + ' / ' + String(total_n).padStart(3, '0');
+
+    requestAnimationFrame(tick);
+  }
+  tick();
+})();
+
+/* ==============================================================
+   5b. REEL — scroll-driven frame expansion + clock
+============================================================== */
+(() => {
+  const sect = document.getElementById('reel');
+  if (!sect) return;
+  const clock = document.getElementById('reel-clock');
+  const prog  = document.getElementById('reel-progress');
+
+  function tickClock() {
+    const now = new Date();
+    const fmt = new Intl.DateTimeFormat('en-US', {
+      hour: '2-digit', minute: '2-digit', second: '2-digit',
+      hour12: false, timeZone: 'America/Chicago'
+    }).format(now);
+    if (clock) clock.textContent = fmt + ' CT';
+  }
+  tickClock(); setInterval(tickClock, 1000);
+
+  function tick() {
+    const rect = sect.getBoundingClientRect();
+    const vh   = window.innerHeight;
+    // p = 0 when top of section is at top of viewport
+    //     1 when section has scrolled by (height - vh)
+    const total = sect.offsetHeight - vh;
+    const passed = Math.min(Math.max(-rect.top, 0), total);
+    const p = total > 0 ? passed / total : 0;
+    sect.style.setProperty('--reel-p', p.toFixed(4));
+    if (prog) prog.textContent = String(Math.round(p * 100)).padStart(3, '0');
+    requestAnimationFrame(tick);
+  }
+  tick();
+})();
+
+/* ==============================================================
+   6. REVEAL ON ENTER (IntersectionObserver)
+============================================================== */
+(() => {
+  const els = document.querySelectorAll('.reveal');
+  if (!els.length) return;
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('in'); });
+  }, { threshold: 0.15 });
+  els.forEach(el => io.observe(el));
+})();
+</script>
+
+</body>
+</html>
